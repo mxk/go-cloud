@@ -20,15 +20,15 @@ func Partition(region string) string {
 	return regionPart[region]
 }
 
-// Related returns all regions in the same partition as region.
-func Related(region string) []string {
+// Related returns all regions in a partition, which may be specified explicitly
+// by name or implicitly by one of its regions.
+func Related(partOrRegion string) []string {
 	once.Do(load)
-	if rel := partRegions[regionPart[region]]; len(rel) > 0 {
-		cpy := make([]string, len(rel))
-		copy(cpy, rel)
-		return cpy
+	rel := regionsIn(partOrRegion)
+	if rel == nil {
+		rel = regionsIn(regionPart[partOrRegion])
 	}
-	return nil
+	return rel
 }
 
 // Supports returns true if service is supported in region. Matching is strict,
@@ -80,6 +80,16 @@ func load() {
 	for _, sr := range svcRegions {
 		sort.Strings(sr)
 	}
+}
+
+// regionsIn returns a copy of all regions in partition p.
+func regionsIn(p string) []string {
+	if r := partRegions[p]; r != nil {
+		v := make([]string, len(r))
+		copy(v, r)
+		return v
+	}
+	return nil
 }
 
 // contains returns true if v contains s.

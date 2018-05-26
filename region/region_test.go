@@ -17,6 +17,7 @@ func TestRelated(t *testing.T) {
 	assert.Contains(t, r, "us-east-1")
 	assert.Contains(t, r, "us-west-1")
 	assert.NotContains(t, r, "us-gov-west-1")
+	assert.Equal(t, r, Related("aws"))
 	assert.Nil(t, Related(""))
 }
 
