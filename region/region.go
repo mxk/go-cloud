@@ -58,7 +58,9 @@ func load() {
 			copy(tmp, srs)
 			srs = tmp
 			for r := range eps {
-				if r != "local" {
+				switch r {
+				case "local", "s3-external-1":
+				default:
 					srs = append(srs, r)
 					regionSet[r] = struct{}{}
 				}
