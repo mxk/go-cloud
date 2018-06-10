@@ -14,6 +14,17 @@ var (
 	svcRegions  map[string][]string
 )
 
+// Partitions returns all known partitions.
+func Partitions() []string {
+	once.Do(load)
+	parts := make([]string, 0, len(partRegions))
+	for part := range partRegions {
+		parts = append(parts, part)
+	}
+	sort.Strings(parts)
+	return parts
+}
+
 // Partition returns the partition of the specified region.
 func Partition(region string) string {
 	once.Do(load)

@@ -6,6 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestPartitions(t *testing.T) {
+	parts := Partitions()
+	assert.Contains(t, parts, "aws")
+	assert.Contains(t, parts, "aws-us-gov")
+}
+
 func TestPartition(t *testing.T) {
 	assert.Equal(t, "aws", Partition("us-east-1"))
 	assert.Equal(t, "aws", Partition("aws-global"))
