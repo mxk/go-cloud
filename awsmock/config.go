@@ -1,3 +1,4 @@
+// Package awsmock provides mocks for unit testing AWS SDK v2 code.
 package awsmock
 
 import (
@@ -24,7 +25,6 @@ func Config(fn func(*aws.Request)) aws.Config {
 	cfg.Handlers.ValidateResponse.Remove(defaults.ValidateResponseHandler)
 	disableHandlerList("awsmock.Unmarshal", &cfg.Handlers.Unmarshal)
 	disableHandlerList("awsmock.UnmarshalMeta", &cfg.Handlers.UnmarshalMeta)
-	//disableHandlerList("awsmock.UnmarshalError", &cfg.Handlers.UnmarshalError)
 
 	// Install mock handler
 	cfg.Handlers.Send.PushBackNamed(aws.NamedHandler{

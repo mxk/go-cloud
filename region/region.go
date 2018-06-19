@@ -1,3 +1,4 @@
+// Package region provides information about AWS partitions and their regions.
 package region
 
 import (

@@ -1,3 +1,5 @@
+// Package arn provides functions and types for working with Amazon Resource
+// Names.
 package arn
 
 import (
