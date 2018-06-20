@@ -117,7 +117,7 @@ func (r ARN) Name() string {
 func (r ARN) WithPath(v string) ARN {
 	i, j := r.path()
 	if i == j {
-		panic("arn: no path: " + r)
+		panic("arn: no path: " + string(r))
 	}
 	return concat(r[:i], cleanPath(v), "/", r[j:])
 }
@@ -127,7 +127,7 @@ func (r ARN) WithPath(v string) ARN {
 func (r ARN) WithPathName(v string) ARN {
 	i, j := r.path()
 	if i == j {
-		panic("arn: no path: " + r)
+		panic("arn: no path: " + string(r))
 	}
 	j = strings.LastIndexByte(v, '/')
 	return concat(r[:i], cleanPath(v[:j+1]), "/", ARN(v[j+1:]))
@@ -167,7 +167,7 @@ func (r ARN) With(o ARN) ARN {
 func (r ARN) field(i int) (int, int) {
 	n, j, k := i, len(prefix), len(prefix)
 	if len(r) < j || r[:j] != prefix {
-		panic("arn: invalid arn: " + r)
+		panic("arn: invalid arn: " + string(r))
 	}
 	for ; k < len(r); k++ {
 		if r[k] == ':' {
@@ -210,7 +210,7 @@ func (r ARN) path() (int, int) {
 			return j, k
 		}
 	}
-	panic("arn: invalid arn: " + r)
+	panic("arn: invalid arn: " + string(r))
 }
 
 // name returns the starting index of the resource name.
@@ -221,7 +221,7 @@ func (r ARN) name() int {
 			return i + 1
 		}
 	}
-	panic("arn: invalid arn: " + r)
+	panic("arn: invalid arn: " + string(r))
 }
 
 // cleanPath normalizes path p, returning either an empty string or an absolute

@@ -123,9 +123,10 @@ func TestInvalid(t *testing.T) {
 	assert.False(t, ARN(Base[:len(Base)-1]).Valid())
 	assert.Panics(t, func() { prefix.Partition() })
 	assert.Panics(t, func() { ARN("").Type() })
-	assert.Panics(t, func() { ARN("").Path() })
-	assert.Panics(t, func() { ARN("").Name() })
-	assert.Panics(t, func() { ARN("arn::::").Resource() })
+	assert.PanicsWithValue(t, `arn: invalid arn: `, func() { ARN("").Path() })
+	assert.PanicsWithValue(t, `arn: invalid arn: x`, func() { ARN("x").Name() })
+	assert.PanicsWithValue(t, `arn: invalid arn or field index 4: arn::::`,
+		func() { ARN("arn::::").Resource() })
 }
 
 func TestNoPath(t *testing.T) {
