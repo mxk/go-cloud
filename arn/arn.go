@@ -147,6 +147,9 @@ func (r ARN) Field(i int) string {
 // WithField returns a new ARN with the ith field set to v.
 func (r ARN) WithField(i int, v string) ARN {
 	j, k := r.field(i)
+	if string(r[j:k]) == v {
+		return r
+	}
 	return concat(r[:j], ARN(v), r[k:])
 }
 
