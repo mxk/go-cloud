@@ -29,9 +29,9 @@ func Config(fn func(*aws.Request)) aws.Config {
 	// Install mock handler
 	cfg.Handlers.Send.PushBackNamed(aws.NamedHandler{
 		Name: "awsmock.SendHandler",
-		Fn: func(req *aws.Request) {
-			req.Retryable = aws.Bool(false)
-			fn(req)
+		Fn: func(q *aws.Request) {
+			q.Retryable = aws.Bool(false)
+			fn(q)
 		},
 	})
 	return cfg

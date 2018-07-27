@@ -11,13 +11,13 @@ import (
 
 func TestConfig(t *testing.T) {
 	wantOut := new(sts.GetCallerIdentityOutput)
-	cfg := Config(func(r *aws.Request) { r.Data = wantOut })
+	cfg := Config(func(q *aws.Request) { q.Data = wantOut })
 	out, err := sts.New(cfg).GetCallerIdentityRequest(nil).Send()
 	require.True(t, out == wantOut)
 	require.NoError(t, err)
 
 	wantErr := errors.New("error")
-	cfg = Config(func(r *aws.Request) { r.Error = wantErr })
+	cfg = Config(func(q *aws.Request) { q.Error = wantErr })
 	out, err = sts.New(cfg).GetCallerIdentityRequest(nil).Send()
 	require.Nil(t, out)
 	require.True(t, err == wantErr)
