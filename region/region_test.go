@@ -33,3 +33,10 @@ func TestSupports(t *testing.T) {
 	assert.True(t, Supports("aws-global", "iam"))
 	assert.True(t, Supports("aws-global", "ec2metadata"))
 }
+
+func TestSubset(t *testing.T) {
+	assert.Equal(t, []string{"aws-global"}, Subset("aws", "iam"))
+	assert.Equal(t, []string(nil), Subset("aws-us-gov", "organizations"))
+	assert.Equal(t, []string(nil), Subset("no-such-partition", "iam"))
+	assert.Contains(t, Subset("aws-us-gov", "ec2"), "us-gov-west-1")
+}

@@ -51,6 +51,22 @@ func Supports(region, service string) bool {
 		(service == endpoints.Ec2metadataServiceID && region == "aws-global")
 }
 
+// Subset returns all regions in a partition that support the specified service.
+func Subset(partition, service string) []string {
+	once.Do(load)
+	all := svcRegions[service]
+	set := make([]string, 0, len(all))
+	for _, r := range all {
+		if regionPart[r] == partition {
+			set = append(set, r)
+		}
+	}
+	if len(set) == 0 {
+		set = nil
+	}
+	return set
+}
+
 // load creates partition/region/service maps.
 func load() {
 	parts := endpoints.DefaultPartitions()
