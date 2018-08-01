@@ -12,6 +12,7 @@ import (
 // simulate AWS response.
 func Config(fn func(q *aws.Request)) aws.Config {
 	cfg := aws.Config{
+		Region:           endpoints.UsEast1RegionID,
 		Credentials:      aws.AnonymousCredentials,
 		EndpointResolver: endpoints.NewDefaultResolver(),
 		Handlers:         defaults.Handlers(),
