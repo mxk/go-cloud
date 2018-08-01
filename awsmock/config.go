@@ -10,7 +10,7 @@ import (
 // Config returns a config that calls fn instead of defaults.SendHandler. The
 // mock handler should set request's Data and/or Error fields as needed to
 // simulate AWS response.
-func Config(fn func(*aws.Request)) aws.Config {
+func Config(fn func(q *aws.Request)) aws.Config {
 	cfg := aws.Config{
 		Credentials:      aws.AnonymousCredentials,
 		EndpointResolver: endpoints.NewDefaultResolver(),
