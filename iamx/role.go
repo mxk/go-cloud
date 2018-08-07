@@ -7,30 +7,31 @@ import (
 )
 
 // DeleteRoles deletes all roles under the specified IAM path.
-func DeleteRoles(c iam.IAM, path string) error {
+func (c Client) DeleteRoles(path string) error {
 	in := iam.ListRolesInput{PathPrefix: aws.String(path)}
 	r := c.ListRolesRequest(&in)
 	p := r.Paginate()
 	var roles []string
 	for p.Next() {
-		for _, r := range p.CurrentPage().Roles {
-			roles = append(roles, aws.StringValue(r.RoleName))
+		out := p.CurrentPage().Roles
+		for i := range out {
+			roles = append(roles, aws.StringValue(out[i].RoleName))
 		}
 	}
 	if err := p.Err(); err != nil {
 		return err
 	}
 	return fast.ForEachIO(len(roles), func(i int) error {
-		return DeleteRole(c, roles[i])
+		return c.DeleteRole(roles[i])
 	})
 }
 
 // DeleteRole deletes the specified role, ensuring that all prerequisites for
 // deletion are met.
-func DeleteRole(c iam.IAM, role string) error {
+func (c Client) DeleteRole(role string) error {
 	err := fast.Call(
-		func() error { return detachRolePolicies(c, role) },
-		func() error { return deleteRolePolicies(c, role) },
+		func() error { return c.detachRolePolicies(role) },
+		func() error { return c.deleteRolePolicies(role) },
 	)
 	if err == nil {
 		in := iam.DeleteRoleInput{RoleName: aws.String(role)}
@@ -40,14 +41,15 @@ func DeleteRole(c iam.IAM, role string) error {
 }
 
 // detachRolePolicies detaches all role policies.
-func detachRolePolicies(c iam.IAM, role string) error {
+func (c Client) detachRolePolicies(role string) error {
 	in := iam.ListAttachedRolePoliciesInput{RoleName: aws.String(role)}
 	r := c.ListAttachedRolePoliciesRequest(&in)
 	p := r.Paginate()
 	var arns []string
 	for p.Next() {
-		for _, pol := range p.CurrentPage().AttachedPolicies {
-			arns = append(arns, aws.StringValue(pol.PolicyArn))
+		out := p.CurrentPage().AttachedPolicies
+		for i := range out {
+			arns = append(arns, aws.StringValue(out[i].PolicyArn))
 		}
 	}
 	if err := p.Err(); err != nil {
@@ -64,7 +66,7 @@ func detachRolePolicies(c iam.IAM, role string) error {
 }
 
 // deleteRolePolicies deletes all inline role policies.
-func deleteRolePolicies(c iam.IAM, role string) error {
+func (c Client) deleteRolePolicies(role string) error {
 	in := iam.ListRolePoliciesInput{RoleName: aws.String(role)}
 	r := c.ListRolePoliciesRequest(&in)
 	p := r.Paginate()

@@ -6,31 +6,41 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 )
 
+// Client is an extended IAM client with additional methods for managing users
+// and roles.
+type Client struct{ iam.IAM }
+
+// New returns a new extended IAM client.
+func New(cfg *aws.Config) Client {
+	return Client{*iam.New(*cfg)}
+}
+
 // DeleteUsers deletes all users under the specified IAM path.
-func DeleteUsers(c iam.IAM, path string) error {
+func (c Client) DeleteUsers(path string) error {
 	in := iam.ListUsersInput{PathPrefix: aws.String(path)}
 	r := c.ListUsersRequest(&in)
 	p := r.Paginate()
 	var users []string
 	for p.Next() {
-		for _, u := range p.CurrentPage().Users {
-			users = append(users, aws.StringValue(u.UserName))
+		out := p.CurrentPage().Users
+		for i := range out {
+			users = append(users, aws.StringValue(out[i].UserName))
 		}
 	}
 	if err := p.Err(); err != nil {
 		return err
 	}
 	return fast.ForEachIO(len(users), func(i int) error {
-		return DeleteUser(c, users[i])
+		return c.DeleteUser(users[i])
 	})
 }
 
 // DeleteUser deletes the specified user, ensuring that all prerequisites for
 // deletion are met.
-func DeleteUser(c iam.IAM, name string) error {
+func (c Client) DeleteUser(name string) error {
 	err := fast.Call(
-		func() error { return detachUserPolicies(c, name) },
-		func() error { return deleteAccessKeys(c, name) },
+		func() error { return c.detachUserPolicies(name) },
+		func() error { return c.deleteAccessKeys(name) },
 	)
 	if err == nil {
 		in := iam.DeleteUserInput{UserName: aws.String(name)}
@@ -40,14 +50,15 @@ func DeleteUser(c iam.IAM, name string) error {
 }
 
 // deleteAccessKeys deletes all user access keys.
-func deleteAccessKeys(c iam.IAM, user string) error {
+func (c Client) deleteAccessKeys(user string) error {
 	in := iam.ListAccessKeysInput{UserName: aws.String(user)}
 	r := c.ListAccessKeysRequest(&in)
 	p := r.Paginate()
 	var ids []string
 	for p.Next() {
-		for _, key := range p.CurrentPage().AccessKeyMetadata {
-			ids = append(ids, aws.StringValue(key.AccessKeyId))
+		out := p.CurrentPage().AccessKeyMetadata
+		for i := range out {
+			ids = append(ids, aws.StringValue(out[i].AccessKeyId))
 		}
 	}
 	if err := p.Err(); err != nil {
@@ -64,14 +75,15 @@ func deleteAccessKeys(c iam.IAM, user string) error {
 }
 
 // detachUserPolicies detaches all user policies.
-func detachUserPolicies(c iam.IAM, user string) error {
+func (c Client) detachUserPolicies(user string) error {
 	in := iam.ListAttachedUserPoliciesInput{UserName: aws.String(user)}
 	r := c.ListAttachedUserPoliciesRequest(&in)
 	p := r.Paginate()
 	var arns []string
 	for p.Next() {
-		for _, pol := range p.CurrentPage().AttachedPolicies {
-			arns = append(arns, aws.StringValue(pol.PolicyArn))
+		out := p.CurrentPage().AttachedPolicies
+		for i := range out {
+			arns = append(arns, aws.StringValue(out[i].PolicyArn))
 		}
 	}
 	if err := p.Err(); err != nil {

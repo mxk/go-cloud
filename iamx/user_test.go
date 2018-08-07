@@ -12,10 +12,10 @@ import (
 
 func TestDelTmpUsers(t *testing.T) {
 	s := mock.NewSession()
-	c := *iam.New(s.Config)
+	c := Client{*iam.New(s.Config)}
 
 	path := "/test/"
-	require.NoError(t, DeleteUsers(c, path))
+	require.NoError(t, c.DeleteUsers(path))
 
 	r := s.OrgsRouter().Account("").UserRouter()
 	r["a"] = &mock.User{User: iam.User{
@@ -39,7 +39,7 @@ func TestDelTmpUsers(t *testing.T) {
 		}},
 	}
 
-	require.NoError(t, DeleteUsers(c, path))
+	require.NoError(t, c.DeleteUsers(path))
 	assert.Contains(t, r, "a")
 	assert.NotContains(t, r, "b")
 }

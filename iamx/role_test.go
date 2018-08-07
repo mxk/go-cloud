@@ -12,10 +12,10 @@ import (
 
 func TestDelTmpRoles(t *testing.T) {
 	s := mock.NewSession()
-	c := *iam.New(s.Config)
+	c := Client{*iam.New(s.Config)}
 
 	path := "/temp/"
-	require.NoError(t, DeleteRoles(c, path))
+	require.NoError(t, c.DeleteRoles(path))
 
 	r := s.OrgsRouter().Account("").RoleRouter()
 	r["a"] = &mock.Role{Role: iam.Role{
@@ -39,7 +39,7 @@ func TestDelTmpRoles(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, DeleteRoles(c, path))
+	require.NoError(t, c.DeleteRoles(path))
 	assert.Contains(t, r, "a")
 	assert.NotContains(t, r, "b")
 }
