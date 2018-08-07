@@ -1,4 +1,4 @@
-package op
+package iamx
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 )
 
 const policyTpl = `{
-	"Version": "` + iamPolicyVersion + `",
+	"Version": "` + PolicyVersion + `",
 	"Statement": [{
 		"Effect": "%s",
 		"Principal": {"AWS": "%s"},
@@ -29,7 +29,7 @@ func TestAssumeRolePolicy(t *testing.T) {
 		in:  "",
 		doc: fmt.Sprintf(policyTpl, "Deny", "*"),
 		p: Policy{
-			Version: iamPolicyVersion,
+			Version: PolicyVersion,
 			Statement: []*Statement{{
 				Effect:    "Deny",
 				Principal: NewAWSPrincipal("*"),
@@ -40,7 +40,7 @@ func TestAssumeRolePolicy(t *testing.T) {
 		in:  "000000000000",
 		doc: fmt.Sprintf(policyTpl, "Allow", "000000000000"),
 		p: Policy{
-			Version: iamPolicyVersion,
+			Version: PolicyVersion,
 			Statement: []*Statement{{
 				Effect:    "Allow",
 				Principal: NewAWSPrincipal("000000000000"),
@@ -51,7 +51,7 @@ func TestAssumeRolePolicy(t *testing.T) {
 		in:  "test",
 		doc: fmt.Sprintf(policyTpl, "Allow", "test"),
 		p: Policy{
-			Version: iamPolicyVersion,
+			Version: PolicyVersion,
 			Statement: []*Statement{{
 				Effect:    "Allow",
 				Principal: NewAWSPrincipal("test"),
@@ -60,7 +60,7 @@ func TestAssumeRolePolicy(t *testing.T) {
 		},
 	}}
 	for _, test := range tests {
-		p := NewAssumeRolePolicy(test.in)
+		p := AssumeRolePolicy(test.in)
 		assert.Equal(t, &test.p, p, "in=%q", test.in)
 		p.Version = ""
 
@@ -77,7 +77,7 @@ func TestAssumeRolePolicy(t *testing.T) {
 
 func TestParsePolicy(t *testing.T) {
 	tpl := `{"Version":"%s"}`
-	doc := fmt.Sprintf(tpl, iamPolicyVersion)
+	doc := fmt.Sprintf(tpl, PolicyVersion)
 	_, err := ParsePolicy(&doc)
 	assert.NoError(t, err)
 

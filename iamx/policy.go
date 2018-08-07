@@ -1,4 +1,4 @@
-package op
+package iamx
 
 import (
 	"bytes"
@@ -11,7 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
-const iamPolicyVersion = "2012-10-17"
+// PolicyVersion is the IAM policy version supported by iamx package.
+const PolicyVersion = "2012-10-17"
 
 // Policy is an IAM policy document.
 type Policy struct {
@@ -20,8 +21,8 @@ type Policy struct {
 	Statement []*Statement
 }
 
-// NewAssumeRolePolicy returns an AssumeRole policy document.
-func NewAssumeRolePolicy(principal string) *Policy {
+// AssumeRolePolicy returns an AssumeRole policy document.
+func AssumeRolePolicy(principal string) *Policy {
 	s := &Statement{
 		Effect:    "Allow",
 		Principal: NewAWSPrincipal(principal),
@@ -31,7 +32,7 @@ func NewAssumeRolePolicy(principal string) *Policy {
 		s.Effect = "Deny"
 		s.Principal.AWS[0] = "*"
 	}
-	return &Policy{Version: iamPolicyVersion, Statement: []*Statement{s}}
+	return &Policy{Version: PolicyVersion, Statement: []*Statement{s}}
 }
 
 // ParsePolicy decodes an IAM policy document.
@@ -50,7 +51,7 @@ func ParsePolicy(s *string) (*Policy, error) {
 	err := json.Unmarshal([]byte(doc), &p)
 	if err != nil {
 		p = nil
-	} else if p.Version != "" && p.Version != iamPolicyVersion {
+	} else if p.Version != "" && p.Version != PolicyVersion {
 		err = fmt.Errorf("policy: unsupported policy version %q", p.Version)
 		p = nil
 	}
@@ -60,10 +61,10 @@ func ParsePolicy(s *string) (*Policy, error) {
 // Doc returns JSON representation of policy p.
 func (p *Policy) Doc() *string {
 	if p.Version == "" {
-		p.Version = iamPolicyVersion
+		p.Version = PolicyVersion
 	}
 	// Buffer used to avoid HTML escaping
-	var buf bytes.Buffer
+	var buf strings.Builder
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(p); err != nil {
