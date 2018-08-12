@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/LuminalHQ/cloudcover/oktapus/mock"
+	"github.com/LuminalHQ/cloudcover/x/arn"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/stretchr/testify/assert"
@@ -11,26 +12,27 @@ import (
 )
 
 func TestDelTmpUsers(t *testing.T) {
-	s := mock.NewSession()
-	c := Client{*iam.New(s.Config)}
+	w := mock.NewAWS("")
+	c := Client{*iam.New(w.Cfg)}
 
 	path := "/test/"
 	require.NoError(t, c.DeleteUsers(path))
 
-	r := s.OrgsRouter().Account("").UserRouter()
+	arnCtx := w.Ctx()
+	r := w.AccountRouter().Get("").UserRouter()
 	r["a"] = &mock.User{User: iam.User{
-		Arn:      aws.String(mock.UserARN("", "a")),
+		Arn:      arn.String(arnCtx.New("iam", "user/a")),
 		Path:     aws.String("/"),
 		UserName: aws.String("a"),
 	}}
 	r["b"] = &mock.User{
 		User: iam.User{
-			Arn:      aws.String(mock.UserARN("", "b")),
+			Arn:      arn.String(arnCtx.New("iam", "user/b")),
 			Path:     aws.String(path),
 			UserName: aws.String("b"),
 		},
-		AttachedPolicies: map[string]string{
-			mock.PolicyARN("", "TestPolicy"): "TestPolicy",
+		AttachedPolicies: map[arn.ARN]string{
+			arnCtx.New("iam", "policy/TestPolicy"): "TestPolicy",
 		},
 		AccessKeys: []*iam.AccessKeyMetadata{{
 			AccessKeyId: aws.String(mock.AccessKeyID),
