@@ -166,6 +166,11 @@ func (r ARN) With(o ARN) ARN {
 	return New(f[0], f[1], f[2], f[3], f[4])
 }
 
+// Ctx extracts the partition, region, and account fields from r.
+func (r ARN) Ctx() Ctx {
+	return Ctx{r.Partition(), r.Region(), r.Account()}
+}
+
 // field returns slice indices of the ith field.
 func (r ARN) field(i int) (int, int) {
 	n, j, k := i, len(prefix), len(prefix)

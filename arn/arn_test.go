@@ -101,6 +101,9 @@ func TestARN(t *testing.T) {
 		assert.Equal(t, r, r.With(New(tc.partition, "", tc.region, "", tc.resource)))
 		assert.Equal(t, r, r.With(New("", tc.service, "", tc.account, "")))
 
+		ctx := Ctx{Partition: tc.partition, Region: tc.region, Account: tc.account}
+		assert.Equal(t, ctx, r.Ctx())
+
 		if tc.path != "" {
 			r := New("", "", "", tc.account, tc.typ, tc.path, tc.name)
 			assert.Equal(t, tc.arn, r)
