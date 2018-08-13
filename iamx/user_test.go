@@ -12,27 +12,26 @@ import (
 )
 
 func TestDelTmpUsers(t *testing.T) {
-	w := mock.NewAWS("")
+	w := mock.NewAWS(mock.Ctx)
 	c := Client{*iam.New(w.Cfg)}
+	r := w.Root().UserRouter()
 
 	path := "/test/"
 	require.NoError(t, c.DeleteUsers(path))
 
-	arnCtx := w.Ctx()
-	r := w.AccountRouter().Get("").UserRouter()
 	r["a"] = &mock.User{User: iam.User{
-		Arn:      arn.String(arnCtx.New("iam", "user/a")),
+		Arn:      arn.String(w.Ctx.New("iam", "user/a")),
 		Path:     aws.String("/"),
 		UserName: aws.String("a"),
 	}}
 	r["b"] = &mock.User{
 		User: iam.User{
-			Arn:      arn.String(arnCtx.New("iam", "user/b")),
+			Arn:      arn.String(w.Ctx.New("iam", "user/b")),
 			Path:     aws.String(path),
 			UserName: aws.String("b"),
 		},
 		AttachedPolicies: map[arn.ARN]string{
-			arnCtx.New("iam", "policy/TestPolicy"): "TestPolicy",
+			w.Ctx.New("iam", "policy/TestPolicy"): "TestPolicy",
 		},
 		AccessKeys: []*iam.AccessKeyMetadata{{
 			AccessKeyId: aws.String(mock.AccessKeyID),
