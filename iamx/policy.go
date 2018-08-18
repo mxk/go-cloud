@@ -11,8 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
-// PolicyVersion is the IAM policy version supported by iamx package.
-const PolicyVersion = "2012-10-17"
+// PolicyVersion2012 is the IAM policy version supported by iamx package.
+const PolicyVersion2012 = "2012-10-17"
 
 // Policy is an IAM policy document.
 type Policy struct {
@@ -32,7 +32,7 @@ func AssumeRolePolicy(principal string) *Policy {
 		s.Effect = "Deny"
 		s.Principal.AWS[0] = "*"
 	}
-	return &Policy{Version: PolicyVersion, Statement: []*Statement{s}}
+	return &Policy{Version: PolicyVersion2012, Statement: []*Statement{s}}
 }
 
 // ParsePolicy decodes an IAM policy document.
@@ -51,7 +51,7 @@ func ParsePolicy(s *string) (*Policy, error) {
 	err := json.Unmarshal([]byte(doc), &p)
 	if err != nil {
 		p = nil
-	} else if p.Version != "" && p.Version != PolicyVersion {
+	} else if p.Version != "" && p.Version != PolicyVersion2012 {
 		err = fmt.Errorf("policy: unsupported policy version %q", p.Version)
 		p = nil
 	}
@@ -61,7 +61,7 @@ func ParsePolicy(s *string) (*Policy, error) {
 // Doc returns JSON representation of policy p.
 func (p *Policy) Doc() *string {
 	if p.Version == "" {
-		p.Version = PolicyVersion
+		p.Version = PolicyVersion2012
 	}
 	// Buffer used to avoid HTML escaping
 	var buf strings.Builder

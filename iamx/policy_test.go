@@ -12,7 +12,7 @@ import (
 )
 
 const policyTpl = `{
-	"Version": "` + PolicyVersion + `",
+	"Version": "` + PolicyVersion2012 + `",
 	"Statement": [{
 		"Effect": "%s",
 		"Principal": {"AWS": "%s"},
@@ -29,7 +29,7 @@ func TestAssumeRolePolicy(t *testing.T) {
 		in:  "",
 		doc: fmt.Sprintf(policyTpl, "Deny", "*"),
 		p: Policy{
-			Version: PolicyVersion,
+			Version: PolicyVersion2012,
 			Statement: []*Statement{{
 				Effect:    "Deny",
 				Principal: NewAWSPrincipal("*"),
@@ -40,7 +40,7 @@ func TestAssumeRolePolicy(t *testing.T) {
 		in:  "000000000000",
 		doc: fmt.Sprintf(policyTpl, "Allow", "000000000000"),
 		p: Policy{
-			Version: PolicyVersion,
+			Version: PolicyVersion2012,
 			Statement: []*Statement{{
 				Effect:    "Allow",
 				Principal: NewAWSPrincipal("000000000000"),
@@ -51,7 +51,7 @@ func TestAssumeRolePolicy(t *testing.T) {
 		in:  "test",
 		doc: fmt.Sprintf(policyTpl, "Allow", "test"),
 		p: Policy{
-			Version: PolicyVersion,
+			Version: PolicyVersion2012,
 			Statement: []*Statement{{
 				Effect:    "Allow",
 				Principal: NewAWSPrincipal("test"),
@@ -77,7 +77,7 @@ func TestAssumeRolePolicy(t *testing.T) {
 
 func TestParsePolicy(t *testing.T) {
 	tpl := `{"Version":"%s"}`
-	doc := fmt.Sprintf(tpl, PolicyVersion)
+	doc := fmt.Sprintf(tpl, PolicyVersion2012)
 	_, err := ParsePolicy(&doc)
 	assert.NoError(t, err)
 
