@@ -11,9 +11,13 @@ import (
 type Client struct{ iam.IAM }
 
 // New returns a new extended IAM client.
-func New(cfg *aws.Config) Client {
-	return Client{*iam.New(*cfg)}
-}
+func New(cfg *aws.Config) Client { return Client{*iam.New(*cfg)} }
+
+// GobEncode prevents the client from being encoded by gob.
+func (Client) GobEncode() ([]byte, error) { return nil, nil }
+
+// GobDecode prevents the client from being decoded by gob.
+func (Client) GobDecode([]byte) error { return nil }
 
 // DeleteUsers deletes all users under the specified IAM path.
 func (c Client) DeleteUsers(path string) error {

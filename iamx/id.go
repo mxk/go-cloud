@@ -19,7 +19,7 @@ const (
 	User            = Entity("AIDA")
 )
 
-// Type identifies entity type based on its ID prefix.
+// Type identifies entity type by its ID prefix.
 func Type(id string) (e Entity) {
 	if len(id) >= 4 {
 		switch Entity(id[:3]) {
