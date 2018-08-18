@@ -8,7 +8,6 @@ import (
 
 func TestEntity(t *testing.T) {
 	tests := []Entity{
-		AccessKey,
 		Group,
 		InstanceProfile,
 		ManagedPolicy,
@@ -18,6 +17,7 @@ func TestEntity(t *testing.T) {
 		ServerCert,
 		TempKey,
 		User,
+		UserKey,
 	}
 	for _, e := range tests {
 		for _, id := range []string{string(e), string(e + "X")} {

@@ -7,7 +7,6 @@ type Entity string
 // (https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html#identifiers-prefixes).
 const (
 	Invalid         = Entity("")
-	AccessKey       = Entity("AKIA")
 	Group           = Entity("AGPA")
 	InstanceProfile = Entity("AIPA")
 	ManagedPolicy   = Entity("ANPA")
@@ -17,14 +16,13 @@ const (
 	ServerCert      = Entity("ASCA")
 	TempKey         = Entity("ASIA")
 	User            = Entity("AIDA")
+	UserKey         = Entity("AKIA")
 )
 
 // Type identifies entity type by its ID prefix.
 func Type(id string) (e Entity) {
 	if len(id) >= 4 {
 		switch Entity(id[:3]) {
-		case AccessKey[:3]:
-			e = AccessKey
 		case Group[:3]:
 			e = Group
 		case InstanceProfile[:3]:
@@ -43,6 +41,8 @@ func Type(id string) (e Entity) {
 			e = TempKey
 		case User[:3]:
 			e = User
+		case UserKey[:3]:
+			e = UserKey
 		}
 		if id[3] != 'A' {
 			e = Invalid
