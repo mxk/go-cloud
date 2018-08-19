@@ -6,13 +6,45 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 
+	"github.com/LuminalHQ/cloudcover/x/arn"
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
 // PolicyVersion2012 is the IAM policy version supported by iamx package.
 const PolicyVersion2012 = "2012-10-17"
+
+// ManagedPolicyARN returns the ARN of a managed IAM policy. Partition defaults
+// to aws, if not specified. An empty ARN is returned if resource is empty. Job
+// functions may be specified without a path, but it is required for other
+// managed policies. If resource is already an ARN, it is returned with an
+// updated partition.
+func ManagedPolicyARN(partition, resource string) arn.ARN {
+	if strings.IndexByte(resource, ':') != -1 {
+		r := arn.ARN(resource)
+		if partition != "" {
+			r = r.WithPartition(partition)
+		} else if r.Partition() == "" {
+			r = r.WithPartition("aws")
+		}
+		return r
+	}
+	r := strings.TrimPrefix(resource, "policy")
+	switch name := r[strings.LastIndexByte(r, '/')+1:]; name {
+	case "Billing", "DatabaseAdministrator", "DataScientist",
+		"NetworkAdministrator", "SupportUser", "SystemAdministrator",
+		"ViewOnlyAccess":
+		r = "job-function/" + name
+	case "":
+		return ""
+	}
+	if partition == "" {
+		partition = "aws"
+	}
+	return arn.New(partition, "iam", "", "aws", "policy", path.Clean("/"+r))
+}
 
 // Policy is an IAM policy document.
 type Policy struct {

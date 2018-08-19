@@ -11,6 +11,39 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestManagedPolicyARN(t *testing.T) {
+	tests := []struct{ part, name, want string }{
+		// Invalid
+		{"", "", ""},
+		{"", "/", ""},
+		{"", "policy", ""},
+		{"", "policy/job-function/", ""},
+		{"aws", "", ""},
+
+		// Partition/name
+		{"", "AdministratorAccess",
+			"arn:aws:iam::aws:policy/AdministratorAccess"},
+		{"", "policy/ViewOnlyAccess",
+			"arn:aws:iam::aws:policy/job-function/ViewOnlyAccess"},
+		{"", "service-role/AmazonEC2RoleforSSM",
+			"arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"},
+		{"aws-us-gov", "/AdministratorAccess",
+			"arn:aws-us-gov:iam::aws:policy/AdministratorAccess"},
+
+		// ARN
+		{"", "arn:aws:iam::aws:policy/AdministratorAccess",
+			"arn:aws:iam::aws:policy/AdministratorAccess"},
+		{"", "arn::iam::aws:policy/AdministratorAccess",
+			"arn:aws:iam::aws:policy/AdministratorAccess"},
+		{"aws-us-gov", "arn:aws:iam::aws:policy/AdministratorAccess",
+			"arn:aws-us-gov:iam::aws:policy/AdministratorAccess"},
+	}
+	for _, tc := range tests {
+		have := ManagedPolicyARN(tc.part, tc.name)
+		assert.Equal(t, tc.want, string(have), "part=%s name=%s", tc.part, tc.name)
+	}
+}
+
 const policyTpl = `{
 	"Version": "` + PolicyVersion2012 + `",
 	"Statement": [{
