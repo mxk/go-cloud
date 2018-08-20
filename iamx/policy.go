@@ -54,17 +54,15 @@ type Policy struct {
 }
 
 // AssumeRolePolicy returns an AssumeRole policy document.
-func AssumeRolePolicy(principal string) *Policy {
-	s := &Statement{
-		Effect:    "Allow",
-		Principal: NewAWSPrincipal(principal),
-		Action:    PolicyMultiVal{"sts:AssumeRole"},
+func AssumeRolePolicy(e Effect, ids ...string) *Policy {
+	return &Policy{
+		Version: PolicyVersion2012,
+		Statement: []*Statement{{
+			Effect:    e,
+			Principal: NewAWSPrincipal(ids...),
+			Action:    PolicyMultiVal{"sts:AssumeRole"},
+		}},
 	}
-	if principal == "" {
-		s.Effect = "Deny"
-		s.Principal.AWS[0] = "*"
-	}
-	return &Policy{Version: PolicyVersion2012, Statement: []*Statement{s}}
 }
 
 // ParsePolicy decodes an IAM policy document.
@@ -95,20 +93,20 @@ func (p *Policy) Doc() *string {
 	if p.Version == "" {
 		p.Version = PolicyVersion2012
 	}
-	// Buffer used to avoid HTML escaping
-	var buf strings.Builder
-	enc := json.NewEncoder(&buf)
+	// Builder used to avoid HTML escaping
+	var b strings.Builder
+	enc := json.NewEncoder(&b)
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(p); err != nil {
 		panic("policy: encode error: " + err.Error())
 	}
-	return aws.String(strings.TrimSuffix(buf.String(), "\n"))
+	return aws.String(strings.TrimSuffix(b.String(), "\n"))
 }
 
 // Statement is an IAM policy statement.
 type Statement struct {
 	SID          string         `json:"Sid,omitempty"`
-	Effect       string         `json:""`
+	Effect       Effect         `json:""`
 	Principal    *Principal     `json:",omitempty"`
 	NotPrincipal *Principal     `json:",omitempty"`
 	Action       PolicyMultiVal `json:",omitempty"`
@@ -117,6 +115,15 @@ type Statement struct {
 	NotResource  PolicyMultiVal `json:",omitempty"`
 	Condition    ConditionMap   `json:",omitempty"`
 }
+
+// Effect is the statement allow/deny effect.
+type Effect string
+
+// Effect values.
+const (
+	Allow = Effect("Allow")
+	Deny  = Effect("Deny")
+)
 
 // Principal specifies the entity to which a statement applies.
 type Principal struct {
