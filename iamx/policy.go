@@ -54,12 +54,12 @@ type Policy struct {
 }
 
 // AssumeRolePolicy returns an AssumeRole policy document.
-func AssumeRolePolicy(e Effect, ids ...string) *Policy {
+func AssumeRolePolicy(e Effect, principals ...string) *Policy {
 	return &Policy{
 		Version: PolicyVersion2012,
 		Statement: []*Statement{{
 			Effect:    e,
-			Principal: NewAWSPrincipal(ids...),
+			Principal: NewAWSPrincipal(principals...),
 			Action:    PolicyMultiVal{"sts:AssumeRole"},
 		}},
 	}
@@ -173,6 +173,20 @@ func (p *Principal) UnmarshalJSON(b []byte) error {
 // PolicyMultiVal is a JSON type that may be encoded either as a string or an
 // array, depending on the number of entries.
 type PolicyMultiVal []string
+
+// Equal returns true if both policy values contain the same entries in the same
+// order.
+func (v PolicyMultiVal) Equal(o PolicyMultiVal) bool {
+	if len(v) != len(o) {
+		return false
+	}
+	for i := range v {
+		if v[i] != o[i] {
+			return false
+		}
+	}
+	return true
+}
 
 // MarshalJSON implements json.Marshaler interface.
 func (v PolicyMultiVal) MarshalJSON() ([]byte, error) {

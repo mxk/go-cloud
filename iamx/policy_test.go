@@ -230,8 +230,11 @@ func TestPolicyMultiVal(t *testing.T) {
 		var v PolicyMultiVal
 		require.NoError(t, json.Unmarshal(tc.in, &v))
 		assert.Equal(t, tc.want, v, "in=%#q", tc.in)
+		assert.True(t, tc.want.Equal(v), "in=%#q", tc.in)
 		out, err := json.Marshal(v)
 		require.NoError(t, err)
 		assert.Equal(t, tc.in, out)
 	}
+	assert.False(t, PolicyMultiVal{}.Equal(PolicyMultiVal{""}))
+	assert.False(t, PolicyMultiVal{"x"}.Equal(PolicyMultiVal{"y"}))
 }
