@@ -112,6 +112,16 @@ func (r ARN) Name() string {
 	return string(r[r.name():])
 }
 
+// PathName returns the combined resource path and name. It panics if r does not
+// have a path.
+func (r ARN) PathName() string {
+	i, j := r.path()
+	if i == j {
+		panic("arn: no path: " + string(r))
+	}
+	return string(r[i:])
+}
+
 // WithPath returns a new ARN with path replaced by v. It panics if r does not
 // have a path.
 func (r ARN) WithPath(v string) ARN {
@@ -120,6 +130,11 @@ func (r ARN) WithPath(v string) ARN {
 		panic("arn: no path: " + string(r))
 	}
 	return concat(r[:i], cleanPath(v), "/", r[j:])
+}
+
+// WithName returns a new ARN with name replaced by v.
+func (r ARN) WithName(v string) ARN {
+	return concat(r[:r.name()], ARN(v))
 }
 
 // WithPathName returns a new ARN with path and name replaced by v. It panics if
@@ -131,11 +146,6 @@ func (r ARN) WithPathName(v string) ARN {
 	}
 	j = strings.LastIndexByte(v, '/')
 	return concat(r[:i], cleanPath(v[:j+1]), "/", ARN(v[j+1:]))
-}
-
-// WithName returns a new ARN with name replaced by v.
-func (r ARN) WithName(v string) ARN {
-	return concat(r[:r.name()], ARN(v))
 }
 
 // Field returns the ith ARN field.

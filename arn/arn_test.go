@@ -72,15 +72,15 @@ func TestARN(t *testing.T) {
 		name:     "z",
 	}}
 	for _, tc := range tests {
-		require.True(t, tc.arn.Valid(), "arn=%s", tc.arn)
-		assert.Equal(t, tc.partition, tc.arn.Partition(), "arn=%s", tc.arn)
-		assert.Equal(t, tc.service, tc.arn.Service(), "arn=%s", tc.arn)
-		assert.Equal(t, tc.region, tc.arn.Region(), "arn=%s", tc.arn)
-		assert.Equal(t, tc.account, tc.arn.Account(), "arn=%s", tc.arn)
-		assert.Equal(t, tc.resource, tc.arn.Resource(), "arn=%s", tc.arn)
-		assert.Equal(t, tc.typ, tc.arn.Type(), "arn=%s", tc.arn)
-		assert.Equal(t, tc.path, tc.arn.Path(), "arn=%s", tc.arn)
-		assert.Equal(t, tc.name, tc.arn.Name(), "arn=%s", tc.arn)
+		require.True(t, tc.arn.Valid(), "%s", tc.arn)
+		assert.Equal(t, tc.partition, tc.arn.Partition(), "%s", tc.arn)
+		assert.Equal(t, tc.service, tc.arn.Service(), "%s", tc.arn)
+		assert.Equal(t, tc.region, tc.arn.Region(), "%s", tc.arn)
+		assert.Equal(t, tc.account, tc.arn.Account(), "%s", tc.arn)
+		assert.Equal(t, tc.resource, tc.arn.Resource(), "%s", tc.arn)
+		assert.Equal(t, tc.typ, tc.arn.Type(), "%s", tc.arn)
+		assert.Equal(t, tc.path, tc.arn.Path(), "%s", tc.arn)
+		assert.Equal(t, tc.name, tc.arn.Name(), "%s", tc.arn)
 
 		r := New(tc.partition, tc.service, tc.region, tc.account, tc.resource)
 		assert.Equal(t, tc.arn, r)
@@ -94,8 +94,10 @@ func TestARN(t *testing.T) {
 			assert.Equal(t, r, r.WithName(tc.name))
 		}
 		if tc.path != "" {
+			assert.Equal(t, tc.path+tc.name, r.PathName())
 			assert.Equal(t, r, r.WithPath(tc.path))
 			assert.Equal(t, r, r.WithPathName(tc.path+tc.name))
+			assert.Equal(t, tc.path+tc.name, r.PathName())
 		}
 
 		assert.Equal(t, r, r.With(New(tc.partition, "", tc.region, "", tc.resource)))
@@ -133,6 +135,7 @@ func TestInvalid(t *testing.T) {
 }
 
 func TestNoPath(t *testing.T) {
+	assert.Panics(t, func() { ARN(Base).PathName() })
 	assert.Panics(t, func() { ARN(Base).WithPath("/") })
 	assert.Panics(t, func() { ARN(Base).WithPathName("/a") })
 }
