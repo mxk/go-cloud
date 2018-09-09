@@ -81,14 +81,8 @@ func (r ARN) WithResource(v string) ARN { return r.WithField(4, v) }
 
 // Valid returns true if r has a valid prefix and the required number of fields.
 func (r ARN) Valid() bool {
-	for n, i := 1, len(prefix); i < len(r); i++ {
-		if r[i] == ':' {
-			if n++; n == fields {
-				return r[:len(prefix)] == prefix
-			}
-		}
-	}
-	return false
+	return strings.HasPrefix(string(r), string(prefix)) &&
+		strings.Count(string(r), ":") >= fields
 }
 
 // Type returns the resource prefix up to the first '/' or ':' character. It
