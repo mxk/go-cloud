@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsCode(t *testing.T) {
-	assert.False(t, IsCode(nil, "TestCode"))
-	assert.True(t, IsCode(awserr.New("TestCode", "", nil), "TestCode"))
+func TestErrCode(t *testing.T) {
+	assert.Equal(t, "", ErrCode(nil))
+	assert.Equal(t, "TestCode", ErrCode(awserr.New("TestCode", "", nil)))
 }
 
-func TestIsStatus(t *testing.T) {
-	assert.False(t, IsStatus(nil, 404))
-	assert.True(t, IsStatus(awserr.NewRequestFailure(nil, 404, ""), 404))
+func TestStatusCode(t *testing.T) {
+	assert.Equal(t, 0, StatusCode(nil))
+	assert.Equal(t, 404, StatusCode(awserr.NewRequestFailure(nil, 404, "")))
 }

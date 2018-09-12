@@ -2,15 +2,18 @@ package awsx
 
 import "github.com/aws/aws-sdk-go-v2/aws/awserr"
 
-// IsCode returns true if err is an awserr.Error with the given code.
-func IsCode(err error, code string) bool {
-	e, ok := err.(awserr.Error)
-	return ok && e.Code() == code
+// ErrCode returns the error code of an awserr.Error.
+func ErrCode(err error) string {
+	if e, ok := err.(awserr.Error); ok {
+		return e.Code()
+	}
+	return ""
 }
 
-// IsStatus returns true if err is an awserr.RequestFailure with the given
-// status code.
-func IsStatus(err error, status int) bool {
-	e, ok := err.(awserr.RequestFailure)
-	return ok && e.StatusCode() == status
+// StatusCode returns the HTTP status code of an awserr.RequestFailure.
+func StatusCode(err error) int {
+	if e, ok := err.(awserr.RequestFailure); ok {
+		return e.StatusCode()
+	}
+	return 0
 }
