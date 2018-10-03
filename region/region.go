@@ -87,7 +87,7 @@ func load() {
 			srs = tmp
 			for r := range eps {
 				switch r {
-				case "local", "s3-external-1", "sandbox":
+				case "fips", "local", "s3-external-1", "sandbox":
 				default:
 					srs = append(srs, r)
 					regionSet[r] = struct{}{}
