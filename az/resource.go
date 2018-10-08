@@ -54,10 +54,14 @@ func (r RID) Norm() RID {
 	var rg, prov string
 	if tail != "" {
 		k, tail = next(tail)
-		// Resource group may be missing for provider IDs
+		// Either resource group or provider may be missing, but not both
 		if keyEq(k, keyRG) {
 			rg, tail = next(tail)
-			k, tail = next(tail)
+			if tail != "" {
+				k, tail = next(tail)
+			} else {
+				k = keyProv
+			}
 		}
 		if !keyEq(k, keyProv) {
 			r.invalid()

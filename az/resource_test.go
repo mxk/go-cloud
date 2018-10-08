@@ -19,6 +19,10 @@ func TestRID(t *testing.T) {
 		id:   "/subscriptions/" + guid,
 		name: guid,
 	}, {
+		id:   "/subscriptions/" + guid + "/resourceGroups/test-rg",
+		rg:   "test-rg",
+		name: "test-rg",
+	}, {
 		id:   "/subscriptions/" + guid + "/providers/Microsoft.Compute",
 		prov: "Microsoft.Compute",
 		name: "Microsoft.Compute",
