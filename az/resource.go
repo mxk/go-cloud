@@ -31,34 +31,53 @@ func (r RID) Provider() string {
 	return v
 }
 
-// Type returns the resource type.
+// Type returns the resource type within the provider's namespace.
 func (r RID) Type() string {
 	v, tail := get(string(r), keyProv)
 	if v != "" {
-		v, _ = next(tail)
+		v, _ = nextStr(tail)
 	}
 	return v
 }
 
-// Name returns the last component of the resource ID.
+// Kind returns the last key component of r (basename of the directory, in path
+// terminology) or "<provider>/<type>" if r contains a "/providers/" component.
+func (r RID) Kind() string {
+	tail := string(r)
+	for {
+		k, _, t := nextPair(tail)
+		if t == "" {
+			return k
+		}
+		if k == keyProv {
+			t = tail[1+len(keyProv):]
+			i, j := nextIdx(t)
+			_, l := nextIdx(t[j:])
+			return t[i : j+l]
+		}
+		tail = t
+	}
+}
+
+// Name returns the last component of the resource ID (path basename).
 func (r RID) Name() string {
 	return string(r[strings.LastIndexByte(string(r), '/')+1:])
 }
 
 // Norm normalizes resource ID representation.
 func (r RID) Norm() RID {
-	k, sub, tail := nextKeyVal(string(r))
+	k, sub, tail := nextPair(string(r))
 	if !keyEq(k, keySub) {
 		r.invalid()
 	}
 	var rg, prov string
 	if tail != "" {
-		k, tail = next(tail)
+		k, tail = nextStr(tail)
 		// Either resource group or provider may be missing, but not both
 		if keyEq(k, keyRG) {
-			rg, tail = next(tail)
+			rg, tail = nextStr(tail)
 			if tail != "" {
-				k, tail = next(tail)
+				k, tail = nextStr(tail)
 			} else {
 				k = keyProv
 			}
@@ -92,36 +111,45 @@ func (r RID) invalid() {
 	panic("az: invalid resource id: " + string(r))
 }
 
-// next returns the next component of a resource ID.
-func next(r string) (next, tail string) {
-	if r == "" || r[0] != '/' {
-		tail = r
-	} else if i := strings.IndexByte(r[1:], '/') + 1; i == 0 {
-		next = r[1:]
-	} else {
-		next, tail = r[1:i], r[i:]
+// get returns the value of a resource ID component.
+func get(r, key string) (val, tail string) {
+	var k, v string
+	for r != "" {
+		if k, v, r = nextPair(r); keyEq(k, key) {
+			return v, r
+		}
 	}
 	return
 }
 
-// nextKeyVal returns the next key value pair of a resource ID.
-func nextKeyVal(r string) (key, val, tail string) {
-	key, tail = next(r)
-	val, tail = next(tail)
+// nextPair returns the next resource ID key/value pair.
+func nextPair(r string) (k, v, tail string) {
+	if r != "" {
+		i, j := nextIdx(r)
+		if k, r = r[i:j], r[j:]; r == "" {
+			panic("az: missing component value in resource id: " + r)
+		}
+		i, j = nextIdx(r)
+		v, tail = r[i:j], r[j:]
+	}
 	return
 }
 
-// get returns the value of a resource ID component.
-func get(r, key string) (val, tail string) {
-	var k string
-	for r != "" {
-		n := len(r)
-		k, r = next(r)
-		if keyEq(k, key) {
-			return next(r)
-		}
-		if len(r) == n {
+// nextStr returns the next resource ID component as a string.
+func nextStr(r string) (s, tail string) {
+	i, j := nextIdx(r)
+	return r[i:j], r[j:]
+}
+
+// nextIdx returns the indices of the next resource ID component. It panics if a
+// non-empty r does not begin with a '/'.
+func nextIdx(r string) (i, j int) {
+	if r != "" {
+		if r[0] != '/' {
 			panic("az: malformed resource id: " + r)
+		}
+		if i, j = 1, strings.IndexByte(r[1:], '/')+1; j == 0 {
+			j = len(r)
 		}
 	}
 	return
