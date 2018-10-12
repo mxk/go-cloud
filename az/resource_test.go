@@ -14,32 +14,36 @@ func TestRID(t *testing.T) {
 		rg   string
 		prov string
 		typ  string
-		kind string
 		name string
 	}{{
 		id: "",
 	}, {
 		id:   "/subscriptions/" + guid,
-		kind: "subscriptions",
+		typ:  "subscriptions",
 		name: guid,
 	}, {
 		id:   "/subscriptions/" + guid + "/resourceGroups/test-rg",
 		rg:   "test-rg",
-		kind: "resourceGroups",
+		typ:  "resourceGroups",
 		name: "test-rg",
 	}, {
 		id:   "/subscriptions/" + guid + "/providers/Microsoft.Compute",
 		prov: "Microsoft.Compute",
-		kind: "providers",
+		typ:  "providers",
 		name: "Microsoft.Compute",
 	}, {
 		id:   "/subscriptions/" + guid + "/resourcegroups/TEST-RG/providers/Microsoft.Network/virtualNetworks/TEST-VNET",
 		norm: "/subscriptions/" + guid + "/resourceGroups/test-rg/providers/Microsoft.Network/virtualNetworks/TEST-VNET",
 		rg:   "TEST-RG",
 		prov: "Microsoft.Network",
-		typ:  "virtualNetworks",
-		kind: "Microsoft.Network/virtualNetworks",
+		typ:  "Microsoft.Network/virtualNetworks",
 		name: "TEST-VNET",
+	}, {
+		id:   "/subscriptions/" + guid + "/resourceGroups/test-rg/providers/Microsoft.Network/networkSecurityGroups/test-nsg/securityRules/Port_80",
+		rg:   "test-rg",
+		prov: "Microsoft.Network",
+		typ:  "Microsoft.Network/networkSecurityGroups/securityRules",
+		name: "Port_80",
 	}}
 	for _, tc := range tests {
 		r := tc.id
@@ -56,7 +60,6 @@ func TestRID(t *testing.T) {
 		assert.Equal(t, tc.rg, r.ResourceGroup(), "%+v", tc)
 		assert.Equal(t, tc.prov, r.Provider(), "%+v", tc)
 		assert.Equal(t, tc.typ, r.Type(), "%+v", tc)
-		assert.Equal(t, tc.kind, r.Kind(), "%+v", tc)
 		assert.Equal(t, tc.name, r.Name(), "%+v", tc)
 	}
 }

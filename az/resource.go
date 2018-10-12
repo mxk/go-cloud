@@ -31,18 +31,9 @@ func (r RID) Provider() string {
 	return v
 }
 
-// Type returns the resource type within the provider's namespace.
+// Type returns the final key component of r (e.g. "resourceGroups") or
+// "<provider>/<type>[/<subtype>...]" if r contains a "/providers/" component.
 func (r RID) Type() string {
-	v, tail := get(string(r), keyProv)
-	if v != "" {
-		v, _ = nextStr(tail)
-	}
-	return v
-}
-
-// Kind returns the last key component of r (basename of the directory, in path
-// terminology) or "<provider>/<type>" if r contains a "/providers/" component.
-func (r RID) Kind() string {
 	tail := string(r)
 	for {
 		k, _, t := nextPair(tail)
@@ -50,13 +41,28 @@ func (r RID) Kind() string {
 			return k
 		}
 		if k == keyProv {
-			t = tail[1+len(keyProv):]
-			i, j := nextIdx(t)
-			_, l := nextIdx(t[j:])
-			return t[i : j+l]
+			tail = tail[1+len(keyProv):]
+			break
 		}
 		tail = t
 	}
+	// Extract "<provider>/<type>" substring without allocation
+	i, j := nextIdx(tail)
+	_, l := nextIdx(tail[j:])
+	j += l
+	k := tail[i:j]
+	if _, tail = nextStr(tail[j:]); tail != "" {
+		// Concatenate subtypes
+		var b strings.Builder
+		b.WriteString(k)
+		for tail != "" {
+			k, _, tail = nextPair(tail)
+			b.WriteByte('/')
+			b.WriteString(k)
+		}
+		k = b.String()
+	}
+	return k
 }
 
 // Name returns the last component of the resource ID (path basename).
