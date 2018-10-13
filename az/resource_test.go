@@ -1,13 +1,16 @@
 package az
 
 import (
+	"reflect"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRID(t *testing.T) {
-	const guid = "00000000-0000-0000-0000-000000000000"
+const guid = "00000000-0000-0000-0000-000000000000"
+
+func TestValidRID(t *testing.T) {
 	tests := []*struct {
 		id   RID
 		norm RID
@@ -15,6 +18,7 @@ func TestRID(t *testing.T) {
 		prov string
 		typ  string
 		name string
+		get  map[string]string
 	}{{
 		id: "",
 	}, {
@@ -36,22 +40,31 @@ func TestRID(t *testing.T) {
 		norm: "/subscriptions/" + guid + "/resourceGroups/test-rg/providers/Microsoft.Network/virtualNetworks/TEST-VNET",
 		rg:   "TEST-RG",
 		prov: "Microsoft.Network",
-		typ:  "Microsoft.Network/virtualNetworks",
+		typ:  "virtualNetworks",
 		name: "TEST-VNET",
 	}, {
 		id:   "/subscriptions/" + guid + "/resourceGroups/test-rg/providers/Microsoft.Network/networkSecurityGroups/test-nsg/securityRules/Port_80",
 		rg:   "test-rg",
 		prov: "Microsoft.Network",
-		typ:  "Microsoft.Network/networkSecurityGroups/securityRules",
+		typ:  "networkSecurityGroups/securityRules",
 		name: "Port_80",
+		get: map[string]string{
+			"":                      "",
+			"Microsoft.Network":     "",
+			"networksecuritygroups": "test-nsg",
+			"securityRules":         "Port_80",
+		},
 	}}
 	for _, tc := range tests {
 		r := tc.id
 		if r != "" {
-			if tc.norm == "" {
-				tc.norm = r
+			want := tc.norm
+			if want == "" {
+				want = r
 			}
-			assert.Equal(t, tc.norm, r.Norm(), "%+v", tc)
+			norm := r.Norm()
+			assert.Equal(t, want, norm, "%+v", tc)
+			assert.Equal(t, r == want, noCopy(string(r), string(norm)), "%+v", tc)
 			assert.Equal(t, guid, r.Subscription(), "%+v", tc)
 		} else {
 			assert.Panics(t, func() { r.Norm() })
@@ -61,5 +74,30 @@ func TestRID(t *testing.T) {
 		assert.Equal(t, tc.prov, r.Provider(), "%+v", tc)
 		assert.Equal(t, tc.typ, r.Type(), "%+v", tc)
 		assert.Equal(t, tc.name, r.Name(), "%+v", tc)
+		for k, v := range tc.get {
+			assert.Equal(t, v, r.Get(k), "%+v", tc)
+		}
 	}
+}
+
+func TestInvalidRID(t *testing.T) {
+	tests := []RID{
+		"/",
+		"_",
+		"/resourceGroup/test-rg",
+		"/subscriptions/" + guid + "/",
+		"/subscriptions/" + guid + "/resourceGroups",
+		"/subscriptions/" + guid + "/resourceGroups/test-rg/virtualNetworks/test-vnet",
+		"/subscriptions/" + guid + "/resourceGroups/test-rg/providers/Microsoft.Network",
+		"/subscriptions/" + guid + "/providers/Microsoft.Compute/virtualNetworks/test-vnet",
+	}
+	for _, r := range tests {
+		assert.Panics(t, func() { r.Norm() }, "%s", r)
+	}
+}
+
+func noCopy(a, b string) bool {
+	ah := (*reflect.StringHeader)(unsafe.Pointer(&a))
+	bh := (*reflect.StringHeader)(unsafe.Pointer(&b))
+	return *ah == *bh
 }

@@ -10,153 +10,128 @@ const (
 	keyProv = "providers"
 )
 
-// RID is an Azure resource ID.
+// RID is an Azure resource ID. A valid ID must begin with a '/' and contain an
+// even number of path elements, which are interpreted as key/value pairs.
 type RID string
 
 // Subscription returns the resource subscription ID.
-func (r RID) Subscription() string {
-	v, _ := get(string(r), keySub)
-	return v
+func (r RID) Subscription() string { return r.Get(keySub) }
+
+// ResourceGroup returns the resource group name.
+func (r RID) ResourceGroup() string { return r.Get(keyRG) }
+
+// Provider returns the resource provider name.
+func (r RID) Provider() string { return r.Get(keyProv) }
+
+// Get returns the value for the specified key.
+func (r RID) Get(key string) string {
+	for p := string(r); p != ""; {
+		i, j, k := nextPairIdx(p)
+		if keyEq(p[i:j], key) {
+			return p[j+1 : k]
+		}
+		p = p[k:]
+	}
+	return ""
 }
 
-// ResourceGroup returns the name of the resource group.
-func (r RID) ResourceGroup() string {
-	v, _ := get(string(r), keyRG)
-	return v
-}
-
-// Provider returns the name of the resource provider.
-func (r RID) Provider() string {
-	v, _ := get(string(r), keyProv)
-	return v
-}
-
-// Type returns the final key component of r (e.g. "resourceGroups") or
-// "<provider>/<type>[/<subtype>...]" if r contains a "/providers/" component.
+// Type returns the last key in r or "<type>[/<subtype>[/...]]" if r contains a
+// "/providers/" element.
 func (r RID) Type() string {
-	tail := string(r)
-	for {
-		k, _, t := nextPair(tail)
-		if t == "" {
-			return k
+	typ, _, p := nextPair(string(r))
+	for p != "" {
+		isProv := keyEq(typ, keyProv)
+		if typ, _, p = nextPair(p); isProv && p != "" {
+			var buf [128]byte
+			b := append(buf[:0], typ...)
+			for {
+				typ, _, p = nextPair(p)
+				if b = append(append(b, '/'), typ...); p == "" {
+					return string(b)
+				}
+			}
 		}
-		if k == keyProv {
-			tail = tail[1+len(keyProv):]
-			break
-		}
-		tail = t
 	}
-	// Extract "<provider>/<type>" substring without allocation
-	i, j := nextIdx(tail)
-	_, l := nextIdx(tail[j:])
-	j += l
-	k := tail[i:j]
-	if _, tail = nextStr(tail[j:]); tail != "" {
-		// Concatenate subtypes
-		var b strings.Builder
-		b.WriteString(k)
-		for tail != "" {
-			k, _, tail = nextPair(tail)
-			b.WriteByte('/')
-			b.WriteString(k)
-		}
-		k = b.String()
-	}
-	return k
+	return typ
 }
 
-// Name returns the last component of the resource ID (path basename).
+// Name returns the last value in r.
 func (r RID) Name() string {
 	return string(r[strings.LastIndexByte(string(r), '/')+1:])
 }
 
-// Norm normalizes resource ID representation.
+// Norm returns a normalized representation of r.
 func (r RID) Norm() RID {
-	k, sub, tail := nextPair(string(r))
+	b := lazyBuilder{src: string(r)}
+
+	// Subscription
+	k, v, p := nextPair(string(r))
 	if !keyEq(k, keySub) {
 		r.invalid()
 	}
-	var rg, prov string
-	if tail != "" {
-		k, tail = nextStr(tail)
-		// Either resource group or provider may be missing, but not both
-		if keyEq(k, keyRG) {
-			rg, tail = nextStr(tail)
-			if tail != "" {
-				k, tail = nextStr(tail)
-			} else {
-				k = keyProv
-			}
+	b.append("/" + keySub + "/").append(strings.ToLower(v))
+	if p == "" {
+		return RID(b.string())
+	}
+
+	// Resource group
+	var haveRG bool
+	if k, v, p = nextPair(p); keyEq(k, keyRG) {
+		b.append("/" + keyRG + "/").append(strings.ToLower(v))
+		if p == "" {
+			return RID(b.string())
 		}
-		if !keyEq(k, keyProv) {
-			r.invalid()
-		}
-		prov = tail
+		k, v, p = nextPair(p)
+		haveRG = true
 	}
-	var b strings.Builder
-	b.Grow(len(r))
-	b.WriteString("/" + keySub + "/")
-	b.WriteString(strings.ToLower(sub))
-	if rg != "" {
-		b.WriteString("/" + keyRG + "/")
-		b.WriteString(strings.ToLower(rg))
+
+	// Provider
+	if !keyEq(k, keyProv) || haveRG == (p == "") {
+		r.invalid()
 	}
-	if prov != "" {
-		// TODO: Normalize provider name?
-		b.WriteString("/" + keyProv)
-		b.WriteString(prov)
-	}
-	if norm := RID(b.String()); norm != r {
-		return norm
-	}
-	return r
+	return RID(b.append("/" + keyProv + "/").append(v).append(p).string())
 }
 
-// invalid panics to indicate malformed resource ID.
+// invalid panics to indicate an invalid resource ID format.
 func (r RID) invalid() {
 	panic("az: invalid resource id: " + string(r))
 }
 
-// get returns the value of a resource ID component.
-func get(r, key string) (val, tail string) {
-	var k, v string
-	for r != "" {
-		if k, v, r = nextPair(r); keyEq(k, key) {
-			return v, r
+// nextIdx returns the indices of the next path component in p, starting at off.
+// It panics if a non-empty p[off:] does not begin with a '/'.
+func nextIdx(p string, off int) (i, j int) {
+	if off < len(p) {
+		if p[off] != '/' {
+			panic("az: invalid resource path: " + p[off:])
+		}
+		i = off + 1
+		if j = strings.IndexByte(p[i:], '/'); j >= 0 {
+			j += i
+		} else {
+			j = len(p)
+		}
+	} else {
+		i, j = off, off
+	}
+	return
+}
+
+// nextPairIdx returns the indices the next pair of path components in p. Index
+// j is the middle separator. It panics if a non-empty p does not begin with a
+// '/' or contain at least two path components.
+func nextPairIdx(p string) (i, j, k int) {
+	if i, j = nextIdx(p, 0); i > 0 {
+		if _, k = nextIdx(p, j); k == j {
+			panic("az: missing component value in resource path: " + p)
 		}
 	}
 	return
 }
 
-// nextPair returns the next resource ID key/value pair.
-func nextPair(r string) (k, v, tail string) {
-	if r != "" {
-		i, j := nextIdx(r)
-		if k, r = r[i:j], r[j:]; r == "" {
-			panic("az: missing component value in resource id: " + r)
-		}
-		i, j = nextIdx(r)
-		v, tail = r[i:j], r[j:]
-	}
-	return
-}
-
-// nextStr returns the next resource ID component as a string.
-func nextStr(r string) (s, tail string) {
-	i, j := nextIdx(r)
-	return r[i:j], r[j:]
-}
-
-// nextIdx returns the indices of the next resource ID component. It panics if a
-// non-empty r does not begin with a '/'.
-func nextIdx(r string) (i, j int) {
-	if r != "" {
-		if r[0] != '/' {
-			panic("az: malformed resource id: " + r)
-		}
-		if i, j = 1, strings.IndexByte(r[1:], '/')+1; j == 0 {
-			j = len(r)
-		}
+// nextPair returns the next pair of path components in p as strings.
+func nextPair(p string) (key, val, tail string) {
+	if i, j, k := nextPairIdx(p); j < k {
+		key, val, tail = p[i:j], p[j+1:k], p[k:]
 	}
 	return
 }
@@ -164,4 +139,32 @@ func nextIdx(r string) (i, j int) {
 // keyEq does case-insensitive comparison of ASCII strings.
 func keyEq(s, t string) bool {
 	return len(s) == len(t) && (s == t || strings.EqualFold(s, t))
+}
+
+// lazyBuilder is a string builder that avoids allocation if the new string is
+// the same as the source.
+type lazyBuilder struct {
+	src string
+	i   int
+	b   strings.Builder
+}
+
+func (b *lazyBuilder) append(s string) *lazyBuilder {
+	if b.b.Len() == 0 {
+		if j := b.i + len(s); j <= len(b.src) && b.src[b.i:j] == s {
+			b.i = j
+			return b
+		}
+		b.b.Grow(len(b.src))
+		b.b.WriteString(b.src[:b.i])
+	}
+	b.b.WriteString(s)
+	return b
+}
+
+func (b *lazyBuilder) string() string {
+	if b.b.Len() > 0 {
+		return b.b.String()
+	}
+	return b.src[:b.i]
 }
