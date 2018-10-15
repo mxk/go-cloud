@@ -104,6 +104,35 @@ func LoadCfg() (*Cfg, error) {
 	return c, err
 }
 
+// TestCfg returns a mock Cfg that can be used for unit testing.
+func TestCfg(url string) *Cfg {
+	if !strings.HasSuffix(url, "/") {
+		url += "/"
+	}
+	return &Cfg{
+		Src: "test",
+		Environment: azure.Environment{
+			Name:                      azure.PublicCloud.Name,
+			ManagementPortalURL:       url,
+			PublishSettingsURL:        url + "publishsettings/index",
+			ServiceManagementEndpoint: url,
+			ResourceManagerEndpoint:   url,
+			ActiveDirectoryEndpoint:   url,
+			GalleryEndpoint:           url,
+			KeyVaultEndpoint:          url,
+			GraphEndpoint:             url,
+			ServiceBusEndpoint:        url,
+			BatchManagementEndpoint:   url,
+			TokenAudience:             url,
+		},
+		TenantID:       "00000000-0000-0000-0000-000000000000",
+		SubscriptionID: "00000000-0000-0000-0000-000000000000",
+		newAuthz: func(string) autorest.Authorizer {
+			return autorest.NullAuthorizer{}
+		},
+	}
+}
+
 // LoadCfgFromEnv loads client configuration from environment variables. If e is
 // nil, the environment is loaded automatically.
 func LoadCfgFromEnv(e *Env) (*Cfg, error) {
