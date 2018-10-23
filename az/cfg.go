@@ -104,6 +104,9 @@ func LoadCfg() (*Cfg, error) {
 	return c, err
 }
 
+// NilGUID is an all-zero GUID.
+const NilGUID = "00000000-0000-0000-0000-000000000000"
+
 // TestCfg returns a mock Cfg that can be used for unit testing.
 func TestCfg(url string) *Cfg {
 	if !strings.HasSuffix(url, "/") {
@@ -125,8 +128,8 @@ func TestCfg(url string) *Cfg {
 			BatchManagementEndpoint:   url,
 			TokenAudience:             url,
 		},
-		TenantID:       "00000000-0000-0000-0000-000000000000",
-		SubscriptionID: "00000000-0000-0000-0000-000000000000",
+		TenantID:       NilGUID,
+		SubscriptionID: NilGUID,
 		newAuthz: func(string) autorest.Authorizer {
 			return autorest.NullAuthorizer{}
 		},
