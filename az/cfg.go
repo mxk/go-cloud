@@ -109,7 +109,9 @@ const NilGUID = "00000000-0000-0000-0000-000000000000"
 
 // TestCfg returns a mock Cfg that can be used for unit testing.
 func TestCfg(url string) *Cfg {
-	if !strings.HasSuffix(url, "/") {
+	if url == "" {
+		url = "http://127.0.0.1/"
+	} else if !strings.HasSuffix(url, "/") {
 		url += "/"
 	}
 	return &Cfg{
