@@ -13,7 +13,7 @@ import (
 )
 
 func TestLoadAuthFile(t *testing.T) {
-	dir := filepath.Join(goAutorestDir(), "testdata")
+	dir := filepath.Join(goAutorestDir(), "autorest", "azure", "auth", "testdata")
 	files := []string{"credsutf8.json", "credsutf16le.json", "credsutf16be.json"}
 	want := authFile{
 		ClientID:                       "client-id-123",
