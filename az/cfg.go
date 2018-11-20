@@ -282,27 +282,42 @@ func LoadCfgFromCLI() (*Cfg, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.newAuthz = func(resource string) autorest.Authorizer {
-		var at adal.Token
-		if resource == tok.Resource {
-			at, _ = tok.ToADALToken()
-		}
-		if at.RefreshToken == "" {
-			at = adal.Token{
-				RefreshToken: tok.RefreshToken,
-				ExpiresIn:    "0",
-				ExpiresOn:    "0",
-				NotBefore:    "0",
-				Resource:     resource,
-				Type:         tok.TokenType,
+	switch sub.User.Type {
+	case "user":
+		c.newAuthz = func(resource string) autorest.Authorizer {
+			var at adal.Token
+			if resource == tok.Resource {
+				at, _ = tok.ToADALToken()
 			}
+			if at.RefreshToken == "" {
+				at = adal.Token{
+					RefreshToken: tok.RefreshToken,
+					ExpiresIn:    "0",
+					ExpiresOn:    "0",
+					NotBefore:    "0",
+					Resource:     resource,
+					Type:         tok.TokenType,
+				}
+			}
+			sp, err := adal.NewServicePrincipalTokenFromManualToken(
+				*oauth, tok.ClientID, resource, at)
+			if err != nil {
+				panic(err)
+			}
+			return autorest.NewBearerAuthorizer(sp)
 		}
-		sp, err := adal.NewServicePrincipalTokenFromManualToken(
-			*oauth, tok.ClientID, resource, at)
-		if err != nil {
-			panic(err)
+	case "servicePrincipal":
+		c.newAuthz = func(resource string) autorest.Authorizer {
+			sp, err := adal.NewServicePrincipalToken(
+				*oauth, tok.ServicePrincipalID, tok.AccessToken, resource)
+			if err != nil {
+				panic(err)
+			}
+			return autorest.NewBearerAuthorizer(sp)
 		}
-		return autorest.NewBearerAuthorizer(sp)
+	default:
+		return nil, fmt.Errorf("az: unsupported subscription user type %q",
+			sub.User.Type)
 	}
 	return c, nil
 }
@@ -422,19 +437,33 @@ func cliSubscription() (*azcli.Subscription, error) {
 	return nil, fmt.Errorf("az: subscription not found in %q", profilePath)
 }
 
+// spToken adds service principal support to azcli.Token.
+type spToken struct {
+	azcli.Token
+	ServicePrincipalID     string `json:"servicePrincipalId"`
+	ServicePrincipalTenant string `json:"servicePrincipalTenant"`
+}
+
 // cliToken loads the CLI access token for the given tenant/user IDs.
-func cliToken(tenantID, userID string) (*azcli.Token, error) {
+func cliToken(tenantID, userID string) (*spToken, error) {
 	tokensPath, err := azcli.AccessTokensPath()
 	if err != nil {
 		return nil, err
 	}
-	toks, err := azcli.LoadTokens(tokensPath)
+	// azcli.LoadTokens doesn't handle service principals
+	b, err := ioutil.ReadFile(tokensPath)
 	if err != nil {
 		return nil, err
 	}
-	for i := range toks {
-		if t := &toks[i]; t.IsMRRT && t.UserID == userID &&
-			strings.HasSuffix(t.Authority, tenantID) {
+	var toks []*spToken
+	if err = json.Unmarshal(b, &toks); err != nil {
+		return nil, err
+	}
+	for _, t := range toks {
+		if (t.IsMRRT && t.UserID == userID &&
+			strings.HasSuffix(t.Authority, tenantID)) ||
+			(t.ServicePrincipalID == userID &&
+				t.ServicePrincipalTenant == tenantID) {
 			return t, nil
 		}
 	}
