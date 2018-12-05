@@ -268,11 +268,14 @@ func LoadCfgFromCLI() (*Cfg, error) {
 	}
 
 	// Find matching environment
-	if sub.EnvironmentName == "AzureCloud" {
+	envName := strings.ToUpper(sub.EnvironmentName)
+	if envName == "AZURECLOUD" {
 		c.Environment = azure.PublicCloud
 	} else {
-		c.Environment, err = azure.EnvironmentFromName(sub.EnvironmentName)
-		if err != nil {
+		if !strings.HasSuffix(envName, "CLOUD") {
+			envName += "CLOUD"
+		}
+		if c.Environment, err = azure.EnvironmentFromName(envName); err != nil {
 			return nil, err
 		}
 	}
