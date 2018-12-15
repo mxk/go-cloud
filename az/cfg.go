@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/LuminalHQ/cloudcover/x/cli"
 	"github.com/LuminalHQ/cloudcover/x/cloud"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-ini/ini"
 	"golang.org/x/crypto/pkcs12"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
@@ -62,6 +64,7 @@ type Env struct {
 	CertPass       string `env:"AZURE_CERTIFICATE_PASSWORD"`
 	EnvName        string `env:"AZURE_ENVIRONMENT"`
 	AuthFile       string `env:"AZURE_AUTH_LOCATION"`
+	Location       string `env:"AZURE_LOCATION"`
 
 	// AZURE_USERNAME and AZURE_PASSWORD are omitted intentionally.
 	// TODO: Handle AZURE_ENVIRONMENT_FILEPATH?
@@ -74,6 +77,7 @@ type Cfg struct {
 	azure.Environment        // Endpoints for the current cloud
 	TenantID          string // Active Directory tenant GUID
 	SubscriptionID    string // Default subscription GUID
+	Location          string // Default location name
 
 	mu       sync.Mutex
 	authz    map[string]autorest.Authorizer
@@ -96,9 +100,14 @@ func LoadCfg() (*Cfg, error) {
 		} else {
 			c, err = LoadCfgFromCLI()
 		}
-		if err == nil && e.SubscriptionID != "" {
-			// AZURE_SUBSCRIPTION overrides default subscription ID
-			c.SubscriptionID = e.SubscriptionID
+		if err == nil {
+			// Allow some environment variables to override defaults
+			if e.SubscriptionID != "" {
+				c.SubscriptionID = e.SubscriptionID
+			}
+			if e.Location != "" {
+				c.Location = e.Location
+			}
 		}
 	}
 	return c, err
@@ -132,6 +141,7 @@ func TestCfg(url string) *Cfg {
 		},
 		TenantID:       NilGUID,
 		SubscriptionID: NilGUID,
+		Location:       "eastus",
 		newAuthz: func(string) autorest.Authorizer {
 			return autorest.NullAuthorizer{}
 		},
@@ -213,6 +223,7 @@ func LoadCfgFromMSI() (*Cfg, error) {
 		Src:            "MSI",
 		Environment:    *EnvForLocation(im.Compute.Location),
 		SubscriptionID: im.Compute.SubscriptionID,
+		Location:       im.Compute.Location,
 	}
 
 	// Extract tenant ID from an access token
@@ -265,6 +276,7 @@ func LoadCfgFromCLI() (*Cfg, error) {
 		Src:            "CLI",
 		TenantID:       sub.TenantID,
 		SubscriptionID: sub.ID,
+		Location:       cliLocation(),
 	}
 
 	// Find matching environment
@@ -471,6 +483,20 @@ func cliToken(tenantID, userID string) (*spToken, error) {
 		}
 	}
 	return nil, fmt.Errorf("az: access token not found in %q", tokensPath)
+}
+
+// cliLocation returns the default location from CLI configuration. Reference:
+// https://docs.microsoft.com/en-us/cli/azure/azure-cli-configuration
+func cliLocation() string {
+	profilePath, err := azcli.ProfilePath()
+	if err != nil {
+		return ""
+	}
+	cfg, err := ini.Load(filepath.Join(filepath.Dir(profilePath), "config"))
+	if err != nil {
+		return ""
+	}
+	return cfg.Section("defaults").Key("location").Value()
 }
 
 // normEndpoint normalizes endpoint URL.
