@@ -56,15 +56,15 @@ func EnvForLocation(loc string) *azure.Environment {
 // Env defines environment variables used by the SDK (not to be confused with
 // azure.Environment, which defines Azure endpoints).
 type Env struct {
-	TenantID       string `env:"AZURE_TENANT_ID"`
-	ClientID       string `env:"AZURE_CLIENT_ID"`
-	SubscriptionID string `env:"AZURE_SUBSCRIPTION"`
-	ClientSecret   string `env:"AZURE_CLIENT_SECRET"`
-	CertFile       string `env:"AZURE_CERTIFICATE_PATH"`
-	CertPass       string `env:"AZURE_CERTIFICATE_PASSWORD"`
-	EnvName        string `env:"AZURE_ENVIRONMENT"`
 	AuthFile       string `env:"AZURE_AUTH_LOCATION"`
+	CertPass       string `env:"AZURE_CERTIFICATE_PASSWORD"`
+	CertFile       string `env:"AZURE_CERTIFICATE_PATH"`
+	ClientID       string `env:"AZURE_CLIENT_ID"`
+	ClientSecret   string `env:"AZURE_CLIENT_SECRET"`
+	EnvName        string `env:"AZURE_ENVIRONMENT"`
 	Location       string `env:"AZURE_LOCATION"`
+	SubscriptionID string `env:"AZURE_SUBSCRIPTION"`
+	TenantID       string `env:"AZURE_TENANT_ID"`
 
 	// AZURE_USERNAME and AZURE_PASSWORD are omitted intentionally.
 	// TODO: Handle AZURE_ENVIRONMENT_FILEPATH?
