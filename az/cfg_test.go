@@ -2,18 +2,17 @@ package az
 
 import (
 	"path/filepath"
-	"reflect"
-	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/Azure/go-autorest/version"
+	"github.com/LuminalHQ/cloudcover/x/gomod"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLoadAuthFile(t *testing.T) {
-	dir := filepath.Join(goAutorestDir(), "autorest", "azure", "auth", "testdata")
+	goAutorest := gomod.Root(version.UserAgent).Path()
+	dir := filepath.Join(goAutorest, "autorest", "azure", "auth", "testdata")
 	files := []string{"credsutf8.json", "credsutf16le.json", "credsutf16be.json"}
 	want := authFile{
 		ClientID:                       "client-id-123",
@@ -32,14 +31,4 @@ func TestLoadAuthFile(t *testing.T) {
 		require.NoError(t, err, "%s", file)
 		assert.Equal(t, want, af, "%s", file)
 	}
-}
-
-func goAutorestDir() string {
-	fn := runtime.FuncForPC(reflect.ValueOf(version.UserAgent).Pointer())
-	dir, _ := fn.FileLine(fn.Entry())
-	dir = filepath.Dir(filepath.Dir(dir))
-	if !strings.HasPrefix(filepath.Base(dir), "go-autorest") {
-		panic("go-autorest directory not found")
-	}
-	return dir
 }
