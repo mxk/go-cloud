@@ -1,9 +1,9 @@
 package iamx
 
 import (
-	"github.com/LuminalHQ/cloudcover/x/fast"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/mxk/cloudcover/x/fast"
 )
 
 // DeleteRoles deletes all roles under the specified IAM path.

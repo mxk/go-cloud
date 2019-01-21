@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Azure/go-autorest/version"
-	"github.com/LuminalHQ/cloudcover/x/gomod"
+	"github.com/mxk/cloudcover/x/gomod"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

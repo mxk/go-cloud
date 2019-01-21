@@ -9,8 +9,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/LuminalHQ/cloudcover/x/arn"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/mxk/cloudcover/x/arn"
 )
 
 // PolicyVersion2012 is the IAM policy version supported by iamx package.
