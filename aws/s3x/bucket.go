@@ -3,7 +3,7 @@ package s3x
 import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/mxk/cloudcover/x/awsx"
+	"github.com/mxk/go-cloud/aws/awsx"
 )
 
 // ErrCodeBucketNotEmpty indicates a failure to delete a non-empty bucket.
